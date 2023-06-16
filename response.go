@@ -1,5 +1,5 @@
 package main
 
 type Response struct {
-	Code int
+	Code int `json:"code"`
 }

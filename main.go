@@ -17,6 +17,24 @@ func worker(job_channel <-chan Job) {
 		fmt.Printf("start request to %s", job.Request.Url)
 		fmt.Printf("start request body %s", job.Request.Body)
 		job.Execute()
+		var queue = Queue{
+			Request:  job.Request,
+			Response: job.Response,
+			Priority: job.Priority,
+			Status:   job.Status,
+		}
+		queue.insert()
+		notify := Notify{
+			Request: NotifyRequest{
+				Url:     job.Notify.Request.Url,
+				Header:  job.Notify.Request.Header,
+				Timeout: job.Notify.Request.Timeout,
+				Body: map[string]string{
+					"event": "firebase_notify",
+				},
+			},
+		}
+		notify.Execute()
 		fmt.Printf("Job request status %v", job.Status)
 
 	}
@@ -34,7 +52,20 @@ func main() {
 		}
 		go worker(job_channel)
 		job_channel <- job
+		fmt.Fprintf(w, "Body: %+v", r.Body)
 	})
+	// http.HandleFunc("/requeue", func(w http.ResponseWriter, r *http.Request) {
+	// 	id := r.URL.Query().Get("id")
+	// 	var job Job
+	// 	err := json.NewDecoder(r.Body).Decode(&job)
+	// 	if err != nil {
+	// 		http.Error(w, err.Error(), http.StatusBadRequest)
+	// 		return
+	// 	}
+	// 	go worker(job_channel)
+	// 	job_channel <- job
+	// 	fmt.Fprintf(w, "Body: %+v", r.Body)
+	// })
 	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Received Body: %+v", r.Body)
 		fmt.Fprintf(w, "Body: %+v", r.Body)

@@ -7,11 +7,11 @@ import (
 )
 
 type Request struct {
-	Url     string
-	Verb    string
-	Timeout int64
-	Header  map[string]string
-	Body    any
+	Url     string            `json:"url"`
+	Verb    string            `json:"verb"`
+	Timeout int64             `json:"timeout"`
+	Header  map[string]string `json:"header"`
+	Body    any               `json:"body"`
 }
 
 func (request Request) RequestBody() (*bytes.Reader, error) {
