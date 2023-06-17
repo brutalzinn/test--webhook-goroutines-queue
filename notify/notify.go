@@ -1,23 +1,16 @@
-package main
+package notify
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
+
+	notify_request "github.com/brutalzinn/test-webhook-goroutines-queue.git/notify/models"
 )
 
 type Notify struct {
-	Request NotifyRequest
+	Request notify_request.NotifyRequest
 	Status
-}
-
-type NotifyRequest struct {
-	Url     string            `json:"url"`
-	Header  map[string]string `json:"header"`
-	Timeout int64             `json:"timeout"`
-	Body    any
 }
 
 func (notify *Notify) Execute() {
@@ -51,14 +44,4 @@ func (notify *Notify) Execute() {
 		return
 	}
 	notify.Status = Rejected
-}
-
-func (request NotifyRequest) RequestBody() (*bytes.Reader, error) {
-	jsonStr, err := json.Marshal(request.Body)
-	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
-		return nil, err
-	}
-	bodyReader := bytes.NewReader(jsonStr)
-	return bodyReader, nil
 }

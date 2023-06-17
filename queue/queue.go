@@ -1,26 +1,32 @@
-package main
+package queue
 
 import (
-	"context"
-	"fmt"
-	"os"
-
-	"github.com/jackc/pgx/v5"
+	"github.com/brutalzinn/test-webhook-goroutines-queue.git/worker"
 )
 
 type Queue struct {
-	Name string
-	Request
-	Response any
-	Priority
-	Status
+	Workers []worker.Worker
 }
 
-type QueueResponse struct {
-	Id string
+func (queue *Queue) Enqueue(worker worker.Worker) {
+	queue.Workers = append(queue.Workers, worker)
 }
 
-func (queue Queue) insert() (response QueueResponse) {
+func (queue *Queue) Current() worker.Worker {
+	item := queue.Workers[0]
+	return item
+}
+func (queue *Queue) Dequeue() worker.Worker {
+	item := queue.Workers[0]
+	queue.Workers = queue.Workers[1:]
+	return item
+}
+
+func (queue *Queue) IsEmpty() bool {
+	return len(queue.Workers) == 0
+}
+
+/* func (queue Queue) insert() (response QueueResponse) {
 	database_url := os.Getenv("DATABASE_URL")
 	conn, err := pgx.Connect(context.Background(), database_url)
 	if err != nil {
@@ -31,7 +37,7 @@ func (queue Queue) insert() (response QueueResponse) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 	}
-	return
+	retNewV4()
 }
 
 func (queue Queue) update(new_queue Queue) (response QueueResponse) {
@@ -46,4 +52,4 @@ func (queue Queue) update(new_queue Queue) (response QueueResponse) {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
 	}
 	return
-}
+} */

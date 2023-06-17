@@ -1,4 +1,4 @@
-package main
+package webhook_models
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-type Request struct {
+type WebhookRequest struct {
 	Url     string            `json:"url"`
 	Verb    string            `json:"verb"`
 	Timeout int64             `json:"timeout"`
@@ -14,7 +14,7 @@ type Request struct {
 	Body    any               `json:"body"`
 }
 
-func (request Request) RequestBody() (*bytes.Reader, error) {
+func (request WebhookRequest) RequestBody() (*bytes.Reader, error) {
 	jsonStr, err := json.Marshal(request.Body)
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())

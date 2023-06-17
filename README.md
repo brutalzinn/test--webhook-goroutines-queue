@@ -10,12 +10,22 @@ In my case, i am implementing a API with GoLang that needs notify multiple users
 
 The queue needs receive a representation of this request to retry in some moment when status is between 400 and 500.
 
-## Example 1 - Sending message to a group channel with Firebase HTTP/1
+Checklist
+
+- [x] setup model for queue
+- [x] setup Makefile
+- [x] setup docker compose to easily postgre setup
+- [ ] setup unit test
+- [ ] setup database integration test
+- [ ] setup retry item if status is 4
+
+## Example 1 - Sending webhook request and notify the result to other webhook
 
     {
+        "execute_at":"2023-06-17T17:50:00-03:00",
         "notify": {
             "request": {
-                "url": "https://webhook.site/39c3e318-d788-49a6-8eb6-b11e9dddc4cd",
+                "url": "https://webhook.site/ca69670a-0938-41a2-8b2f-dbe0b0baf7c1",
                 "timeout": 30,
                 "header": {
                     "content-type": "application/json",

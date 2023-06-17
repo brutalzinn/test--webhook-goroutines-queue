@@ -1,4 +1,4 @@
-package main
+package notify
 
 type Priority uint8
 type Status uint8
@@ -14,5 +14,5 @@ const (
 	Pending          = 1
 	Approved         = 2
 	Rejected         = 3
-	Reprocess        = 4
+	Delivered        = 4
 )
