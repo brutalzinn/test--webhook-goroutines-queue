@@ -22,15 +22,12 @@ Checklist
 ## Example 1 - Sending webhook request and notify the result to other webhook
 
     {
-        "execute_at":"2023-06-17T17:50:00-03:00",
         "notify": {
-            "request": {
-                "url": "https://webhook.site/ca69670a-0938-41a2-8b2f-dbe0b0baf7c1",
-                "timeout": 30,
-                "header": {
-                    "content-type": "application/json",
-                    "teste": "blablabla"
-                }
+            "url": "https://webhook.site/f407cb8e-9eb7-4d48-aeed-5fb2805f8b63",
+            "timeout": 30,
+            "header": {
+                "content-type": "application/json",
+                "teste": "blablabla"
             }
         },
         "request": {
@@ -39,10 +36,36 @@ Checklist
             "timeout": 30,
             "header": {
                 "content-type": "application/json",
-                "teste": "blablabla"
+                "ApiKey": "(myapikeyhere)"
             },
             "body": {
-                "firebaseToken": "blablabla"
+                "teste": "blablabla"
+            }
+        }
+    }
+
+## Example 2 - Sheduler a webhook request and notify the result to other webhook
+
+    {
+        "execute_at": "2023-06-18T01:00:00-03:00",
+        "notify": {
+            "url": "https://webhook.site/f407cb8e-9eb7-4d48-aeed-5fb2805f8b63",
+            "timeout": 30,
+            "header": {
+                "content-type": "application/json",
+                "teste": "blablabla"
+            }
+        },
+        "request": {
+            "url": "https://webhook.site/7b2d3a05-c05b-450c-b38c-725b3fabc1a5",
+            "verb": "POST",
+            "timeout": 30,
+            "header": {
+                "content-type": "application/json",
+                "ApiKey": "(myapikeyhere)"
+            },
+            "body": {
+                "teste": "blablabla"
             }
         }
     }
