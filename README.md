@@ -1,4 +1,4 @@
-# IN DEVELOPMENT
+# STOP DEV BECAUSE I ALREADY SOLVE MY MAIN OBJECTIVE
 
 # Study case for some exceptions that can happen when handles with notification system
 
@@ -14,10 +14,10 @@ Checklist
 
 - [x] setup model for queue
 - [x] setup Makefile
-- [x] setup docker compose to easily postgre setup
+- [x] setup docker compose to easily postgres setup
 - [ ] setup unit test
 - [ ] setup database integration test
-- [ ] setup retry item if status is 4
+- [ ] setup a STDOUT when the API is down all queues needed be cleaned and sheduler task need be reprocessed after startup.
 
 ## Example 1 - Sending webhook request and notify the result to other webhook
 
