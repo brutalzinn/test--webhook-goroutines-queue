@@ -15,11 +15,21 @@ type WebhookRequest struct {
 }
 
 func (request WebhookRequest) RequestBody() (*bytes.Reader, error) {
-	jsonStr, err := json.Marshal(request.Body)
+	jsonBytes, err := json.Marshal(request.Body)
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())
 		return nil, err
 	}
-	bodyReader := bytes.NewReader(jsonStr)
+	bodyReader := bytes.NewReader(jsonBytes)
 	return bodyReader, nil
+}
+
+func (request WebhookRequest) RequestBodyString() string {
+	jsonBytes, err := json.Marshal(request.Body)
+	if err != nil {
+		fmt.Printf("Error: %s", err.Error())
+		return ""
+	}
+	bodyString := string(jsonBytes)
+	return bodyString
 }

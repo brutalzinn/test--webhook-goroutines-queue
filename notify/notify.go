@@ -13,9 +13,9 @@ type Notify struct {
 	Status
 }
 
-func (notify *Notify) Execute() {
+func (notify *Notify) Execute(body notify_request.NotifyBody) {
 	notify.Status = Created
-	request_body, err := notify.Request.RequestBody()
+	request_body, err := notify.Request.RequestBody(body)
 	if err != nil {
 		fmt.Printf("client: could not create request: %s\n Reprocess this after", err)
 		notify.Status = Rejected

@@ -6,7 +6,6 @@ type NotifyRequest struct {
 	Url     string            `json:"url"`
 	Header  map[string]string `json:"header"`
 	Timeout int64             `json:"timeout"`
-	Body    any
 }
 
 type QueueWebhookRequest struct {

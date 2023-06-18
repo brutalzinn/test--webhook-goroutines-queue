@@ -10,9 +10,9 @@ const (
 )
 
 const (
-	Created   Status = 0
-	Pending          = 1
-	Approved         = 2
-	Rejected         = 3
-	Delivered        = 4
+	Created  Status = 0
+	Pending         = 1
+	Approved        = 2
+	Rejected        = 3
+	Error           = 4
 )
