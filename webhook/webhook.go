@@ -17,7 +17,7 @@ type Webhook struct {
 	Response string
 }
 
-func (wh *Webhook) Execute() worker.ExecFeedbackModel {
+func (wh *Webhook) Execute() worker.FeedbackModel {
 	wh.Status = custom_types.Created
 	request_body, err := wh.Request.RequestBody()
 	if err != nil {
@@ -60,8 +60,8 @@ func (wh *Webhook) Execute() worker.ExecFeedbackModel {
 	return wh.createFeedbackModel()
 }
 
-func (wh *Webhook) createFeedbackModel() worker.ExecFeedbackModel {
-	execFeedbackModel := worker.ExecFeedbackModel{
+func (wh *Webhook) createFeedbackModel() worker.FeedbackModel {
+	execFeedbackModel := worker.FeedbackModel{
 		ExecuteAt: time.Now(),
 		Response:  wh.Response,
 		Request:   wh.Request.RequestBodyString(),

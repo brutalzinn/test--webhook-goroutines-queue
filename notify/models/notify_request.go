@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+
+	"github.com/brutalzinn/test-webhook-goroutines-queue.git/custom_types"
 )
 
 type NotifyRequest struct {
@@ -14,7 +16,13 @@ type NotifyRequest struct {
 
 type NotifyBody struct {
 	Origin  string
-	Payload any
+	Payload NotifyPayload
+}
+
+type NotifyPayload struct {
+	Status   custom_types.Status
+	Type     custom_types.ExecutionType
+	Response *string
 }
 
 func (request *NotifyRequest) RequestBody(body NotifyBody) (*bytes.Reader, error) {

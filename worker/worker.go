@@ -12,12 +12,12 @@ import (
 )
 
 type Worker struct {
-	Id        string
-	Options   *WorkerOptions
-	Service   custom_types.ServiceType
-	Execution custom_types.ExecutionType
-	Exec      func() worker.ExecFeedbackModel
-	Notify    *notify.Notify
+	Id            string
+	Options       *WorkerOptions
+	Service       custom_types.ServiceType
+	ExecutionType custom_types.ExecutionType
+	Exec          func() worker.FeedbackModel
+	Notify        *notify.Notify
 }
 
 type WorkerOptions struct {
@@ -25,7 +25,18 @@ type WorkerOptions struct {
 	Priority  custom_types.Priority
 }
 
-func New(exec func() worker.ExecFeedbackModel, serviceType custom_types.ServiceType) Worker {
+type WorkerCompleted struct {
+	FeedbackModel worker.FeedbackModel
+	ExecutionType custom_types.ExecutionType
+	Notify        *notify.Notify
+}
+
+type WorkerNotify struct {
+	Origin  string
+	Payload notify_request.NotifyPayload
+}
+
+func New(exec func() worker.FeedbackModel, serviceType custom_types.ServiceType) Worker {
 	id, _ := uuid.NewV4()
 	return Worker{
 		Id:      id.String(),
@@ -45,21 +56,21 @@ func (worker Worker) WithNotify(notify *notify.Notify) Worker {
 }
 
 func (worker *Worker) Execute() {
-	execModel := worker.Exec()
+	execFeedback := worker.Exec()
 	workerLog := WorkerLog{
 		Worker:          worker,
-		Status:          execModel.Status,
-		RequestPayload:  execModel.Request,
-		ResponsePayload: execModel.Response,
+		Status:          execFeedback.Status,
+		RequestPayload:  execFeedback.Request,
+		ResponsePayload: execFeedback.Response,
 	}
 	workerLog.Insert()
 	fmt.Printf("Run worker %s at %s\n", worker.Id, time.Now())
 	notifyBody := notify_request.NotifyBody{
-		Origin: "WEBHOOK",
-		Payload: map[string]any{
-			"type":     custom_types.Normal,
-			"status":   execModel.Status,
-			"response": execModel.Response,
+		Origin: "WEBHOOK_NORMAL",
+		Payload: notify_request.NotifyPayload{
+			Type:     custom_types.Normal,
+			Status:   execFeedback.Status,
+			Response: &execFeedback.Response,
 		},
 	}
 	worker.Notify.Execute(notifyBody)
@@ -77,37 +88,46 @@ func (worker *Worker) ExecuteShedule() {
 	if err != nil {
 		fmt.Printf("Wrong at worker sheduler insert %s at %s\n", worker.Id, time.Now())
 	}
+	workerNotify := WorkerNotify{
+		Origin: "WEBHOOK_SHEDULER",
+		Payload: notify_request.NotifyPayload{
+			Type:     custom_types.Sheduler,
+			Status:   custom_types.Created,
+			Response: nil,
+		},
+	}
+	worker.sendNotify(workerNotify)
 
 	time.AfterFunc(worker.Options.ExecuteAt.Sub(time.Now()), func() {
-		execModel := worker.Exec()
+		feedbackModel := worker.Exec()
 		workerLog := WorkerLog{
 			Worker:          worker,
-			Status:          execModel.Status,
-			RequestPayload:  execModel.Request,
-			ResponsePayload: execModel.Response,
+			Status:          feedbackModel.Status,
+			RequestPayload:  feedbackModel.Request,
+			ResponsePayload: feedbackModel.Response,
 		}
 		err = workerLog.Update(id)
 		fmt.Printf("### Worker sheduler %s update at %s executeAt:%s \n", worker.Id, time.Now(), worker.Options.ExecuteAt)
 		if err != nil {
 			fmt.Printf("Wrong at worker sheduler update %s at %s\n", worker.Id, time.Now())
 		}
-		notifyBody := notify_request.NotifyBody{
-			Origin: "WEBHOOK",
-			Payload: map[string]any{
-				"type":     custom_types.Sheduler,
-				"status":   execModel.Status,
-				"response": execModel.Response,
+		workerNotify := WorkerNotify{
+			Origin: "WEBHOOK_SHEDULER",
+			Payload: notify_request.NotifyPayload{
+				Type:     custom_types.Sheduler,
+				Status:   feedbackModel.Status,
+				Response: &feedbackModel.Response,
 			},
 		}
-		worker.Notify.Execute(notifyBody)
+		worker.sendNotify(workerNotify)
 	})
+}
+
+func (worker *Worker) sendNotify(workerNotify WorkerNotify) {
 	notifyBody := notify_request.NotifyBody{
-		Origin: "WEBHOOK",
-		Payload: map[string]any{
-			"type":     custom_types.Sheduler,
-			"status":   custom_types.Created,
-			"response": nil,
-		},
+		Origin:  workerNotify.Origin,
+		Payload: workerNotify.Payload,
 	}
 	worker.Notify.Execute(notifyBody)
+	fmt.Printf("Notify sended to work %s", worker.Id)
 }

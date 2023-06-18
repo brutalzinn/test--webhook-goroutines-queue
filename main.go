@@ -39,21 +39,22 @@ import (
 */
 
 func main() {
-	processQueue, shedulerQueue := queue.Queue{}, queue.Queue{}
+	normalQueue, shedulerQueue := queue.Queue{}, queue.Queue{}
+	queue_channel := make(chan queue.Queue)
 	// goroutine to perform normal queue operation
 	go func() {
-		for range time.Tick(time.Second * 1) {
-			for !processQueue.IsEmpty() {
-				item := processQueue.Dequeue()
+		for range queue_channel {
+			for !normalQueue.IsEmpty() {
+				item := normalQueue.Dequeue()
 				if item.Options.ExecuteAt.After(time.Now()) {
-					fmt.Printf("Jumping %s and sheduler at %s\n ", item.Id, item.Options.ExecuteAt)
+					fmt.Printf("Jumping %s and sheduler to %s\n ", item.Id, item.Options.ExecuteAt)
 					shedulerQueue.Enqueue(item)
 					continue
 				}
 				item.Execute()
 				fmt.Printf("execute the worker %s\n", item.Id)
 			}
-			fmt.Printf("Process all processQueue %s lenght %b\n", time.Now(), len(processQueue.Workers))
+			fmt.Printf("Process all normalQueue %s lenght %b\n", time.Now(), len(normalQueue.Workers))
 		}
 	}()
 	// goroutine to perform sheduler queue operation
@@ -61,11 +62,11 @@ func main() {
 		for range time.Tick(time.Minute * 1) {
 			for !shedulerQueue.IsEmpty() {
 				item := shedulerQueue.Dequeue()
-				item.Execution = custom_types.Sheduler
+				item.ExecutionType = custom_types.Sheduler
 				item.ExecuteShedule()
 				fmt.Printf("execute the worker sheduled %s\n", item.Id)
 			}
-			fmt.Printf("Process all sheduler queue %s lenght %b\n", time.Now(), len(shedulerQueue.Workers))
+			fmt.Printf("Process all shedulerQueue at %s lenght %b\n", time.Now(), len(shedulerQueue.Workers))
 		}
 	}()
 
@@ -99,7 +100,8 @@ func main() {
 		worker := worker.New(wh.Execute, custom_types.Webhook)
 		worker = worker.WithOptions(&options)
 		worker = worker.WithNotify(&notify)
-		processQueue.Enqueue(worker)
+		normalQueue.Enqueue(worker)
+		queue_channel <- normalQueue
 		w.WriteHeader(200)
 	})
 
