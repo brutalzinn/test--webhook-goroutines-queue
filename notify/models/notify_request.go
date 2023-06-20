@@ -21,7 +21,6 @@ type NotifyBody struct {
 }
 
 type NotifyPayload struct {
-	Id       string                     `json:"id"`
 	Status   custom_types.Status        `json:"status"`
 	Type     custom_types.ExecutionType `json:"type"`
 	Response map[string]any             `json:"response"`

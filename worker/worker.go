@@ -131,7 +131,6 @@ func (worker *Worker) sendWorkerNotify(workerCompleted WorkerCompleted) {
 		Id:     workerCompleted.Id,
 		Origin: strings.ToUpper(origin),
 		Payload: notify_request.NotifyPayload{
-			Id:       workerCompleted.Id,
 			Type:     worker.ExecutionType,
 			Status:   workerCompleted.FeedbackModel.Status,
 			Response: workerCompleted.FeedbackModel.Response,
