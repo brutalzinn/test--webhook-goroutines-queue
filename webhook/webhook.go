@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -8,16 +9,16 @@ import (
 
 	"github.com/brutalzinn/test-webhook-goroutines-queue.git/custom_types"
 	webhook_models "github.com/brutalzinn/test-webhook-goroutines-queue.git/webhook/models"
-	worker "github.com/brutalzinn/test-webhook-goroutines-queue.git/worker/models"
+	"github.com/brutalzinn/test-webhook-goroutines-queue.git/worker"
 )
 
 type Webhook struct {
 	Request  webhook_models.WebhookRequest
+	Response webhook_models.WebhookResponse
 	Status   custom_types.Status
-	Response string
 }
 
-func (wh *Webhook) Execute() worker.FeedbackModel {
+func (wh *Webhook) Execute() worker.WorkerFeedbackModel {
 	wh.Status = custom_types.Created
 	request_body, err := wh.Request.RequestBody()
 	if err != nil {
@@ -46,13 +47,19 @@ func (wh *Webhook) Execute() worker.FeedbackModel {
 	}
 	if response.StatusCode >= 200 && response.StatusCode <= 300 {
 		body, _ := ioutil.ReadAll(response.Body)
-		wh.Response = string(body)
+		wh.Response = webhook_models.WebhookResponse{
+			StatusCode: response.StatusCode,
+			Body:       createObjMap(body),
+		}
 		wh.Status = custom_types.Approved
 		return wh.createFeedbackModel()
 	}
 	if response.StatusCode >= 400 && response.StatusCode <= 599 {
 		body, _ := ioutil.ReadAll(response.Body)
-		wh.Response = string(body)
+		wh.Response = webhook_models.WebhookResponse{
+			StatusCode: response.StatusCode,
+			Body:       createObjMap(body),
+		}
 		wh.Status = custom_types.Error
 		return wh.createFeedbackModel()
 	}
@@ -60,11 +67,16 @@ func (wh *Webhook) Execute() worker.FeedbackModel {
 	return wh.createFeedbackModel()
 }
 
-func (wh *Webhook) createFeedbackModel() worker.FeedbackModel {
-	execFeedbackModel := worker.FeedbackModel{
+func createObjMap(obj []byte) map[string]any {
+	var keysPair map[string]any
+	_ = json.Unmarshal(obj, &keysPair)
+	return keysPair
+}
+func (wh *Webhook) createFeedbackModel() worker.WorkerFeedbackModel {
+	execFeedbackModel := worker.WorkerFeedbackModel{
 		ExecuteAt: time.Now(),
-		Response:  wh.Response,
-		Request:   wh.Request.RequestBodyString(),
+		Response:  wh.Response.ResponseBodyMap(),
+		Request:   wh.Request.RequestBodyMap(),
 		Status:    wh.Status,
 	}
 	return execFeedbackModel

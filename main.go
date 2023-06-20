@@ -47,14 +47,11 @@ func main() {
 			for !normalQueue.IsEmpty() {
 				item := normalQueue.Dequeue()
 				if item.Options.ExecuteAt.After(time.Now()) {
-					fmt.Printf("Jumping %s and sheduler to %s\n ", item.Id, item.Options.ExecuteAt)
 					shedulerQueue.Enqueue(item)
 					continue
 				}
 				item.Execute()
-				fmt.Printf("execute the worker %s\n", item.Id)
 			}
-			fmt.Printf("Process all normalQueue %s lenght %b\n", time.Now(), len(normalQueue.Workers))
 		}
 	}()
 	// goroutine to perform sheduler queue operation
@@ -64,9 +61,7 @@ func main() {
 				item := shedulerQueue.Dequeue()
 				item.ExecutionType = custom_types.Sheduler
 				item.ExecuteShedule()
-				fmt.Printf("execute the worker sheduled %s\n", item.Id)
 			}
-			fmt.Printf("Process all shedulerQueue at %s lenght %b\n", time.Now(), len(shedulerQueue.Workers))
 		}
 	}()
 

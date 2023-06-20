@@ -2,7 +2,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS "queue" (
 	"id" uuid DEFAULT uuid_generate_v4(),
-    "name" text not null,
     "priority" INT default 1,
     "status" INT default 1,
     "service" INT default 1,

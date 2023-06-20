@@ -2,21 +2,21 @@ package worker
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/brutalzinn/test-webhook-goroutines-queue.git/custom_types"
 	"github.com/brutalzinn/test-webhook-goroutines-queue.git/notify"
 	notify_request "github.com/brutalzinn/test-webhook-goroutines-queue.git/notify/models"
-	worker "github.com/brutalzinn/test-webhook-goroutines-queue.git/worker/models"
 	"github.com/gofrs/uuid"
 )
 
 type Worker struct {
 	Id            string
 	Options       *WorkerOptions
-	Service       custom_types.ServiceType
+	ServiceType   custom_types.ServiceType
 	ExecutionType custom_types.ExecutionType
-	Exec          func() worker.FeedbackModel
+	Exec          func() WorkerFeedbackModel
 	Notify        *notify.Notify
 }
 
@@ -26,22 +26,29 @@ type WorkerOptions struct {
 }
 
 type WorkerCompleted struct {
-	FeedbackModel worker.FeedbackModel
-	ExecutionType custom_types.ExecutionType
-	Notify        *notify.Notify
+	Id            string
+	FeedbackModel WorkerFeedbackModel
+	WorkerNotify  WorkerNotify
 }
 
 type WorkerNotify struct {
 	Origin  string
 	Payload notify_request.NotifyPayload
 }
+type WorkerFeedbackModel struct {
+	Response  map[string]any
+	Request   map[string]any
+	ExecuteAt time.Time
+	Status    custom_types.Status
+}
 
-func New(exec func() worker.FeedbackModel, serviceType custom_types.ServiceType) Worker {
+func New(exec func() WorkerFeedbackModel, serviceType custom_types.ServiceType) Worker {
 	id, _ := uuid.NewV4()
 	return Worker{
-		Id:      id.String(),
-		Exec:    exec,
-		Service: serviceType,
+		Id:            id.String(),
+		Exec:          exec,
+		ExecutionType: custom_types.Normal,
+		ServiceType:   serviceType,
 	}
 }
 
@@ -63,41 +70,37 @@ func (worker *Worker) Execute() {
 		RequestPayload:  execFeedback.Request,
 		ResponsePayload: execFeedback.Response,
 	}
-	workerLog.Insert()
-	fmt.Printf("Run worker %s at %s\n", worker.Id, time.Now())
-	notifyBody := notify_request.NotifyBody{
-		Origin: "WEBHOOK_NORMAL",
-		Payload: notify_request.NotifyPayload{
-			Type:     custom_types.Normal,
-			Status:   execFeedback.Status,
-			Response: &execFeedback.Response,
-		},
+	id, err := workerLog.Insert()
+	if err != nil {
+		fmt.Printf("Wrong at worker insert %s at %s\n", id, time.Now())
 	}
-	worker.Notify.Execute(notifyBody)
+	fmt.Printf("Run worker %s at %s\n", id, time.Now())
+	onCompletedEvent := WorkerCompleted{
+		FeedbackModel: execFeedback,
+		Id:            id,
+	}
+	worker.onComplete(onCompletedEvent)
 }
 
 func (worker *Worker) ExecuteShedule() {
 	workerLog := WorkerLog{
 		Worker:          worker,
 		Status:          custom_types.Created,
-		RequestPayload:  "{}",
-		ResponsePayload: "{}",
+		RequestPayload:  map[string]any{},
+		ResponsePayload: map[string]any{},
 	}
 	id, err := workerLog.Insert()
-	fmt.Printf("### Worker sheduler  %s inserted at %s executeAt:%s \n", worker.Id, time.Now(), worker.Options.ExecuteAt)
+	fmt.Printf("### Worker sheduler  %s inserted at %s executeAt:%s \n", id, time.Now(), worker.Options.ExecuteAt)
 	if err != nil {
-		fmt.Printf("Wrong at worker sheduler insert %s at %s\n", worker.Id, time.Now())
+		fmt.Printf("Wrong at worker sheduler insert %s at %s\n", id, time.Now())
 	}
-	workerNotify := WorkerNotify{
-		Origin: "WEBHOOK_SHEDULER",
-		Payload: notify_request.NotifyPayload{
-			Type:     custom_types.Sheduler,
-			Status:   custom_types.Created,
-			Response: nil,
+	onCompletedEvent := WorkerCompleted{
+		FeedbackModel: WorkerFeedbackModel{
+			Status: custom_types.Created,
 		},
+		Id: id,
 	}
-	worker.sendNotify(workerNotify)
-
+	worker.onComplete(onCompletedEvent)
 	time.AfterFunc(worker.Options.ExecuteAt.Sub(time.Now()), func() {
 		feedbackModel := worker.Exec()
 		workerLog := WorkerLog{
@@ -107,27 +110,33 @@ func (worker *Worker) ExecuteShedule() {
 			ResponsePayload: feedbackModel.Response,
 		}
 		err = workerLog.Update(id)
-		fmt.Printf("### Worker sheduler %s update at %s executeAt:%s \n", worker.Id, time.Now(), worker.Options.ExecuteAt)
+		fmt.Printf("### Worker sheduler %s update at %s executeAt:%s \n", id, time.Now(), worker.Options.ExecuteAt)
 		if err != nil {
-			fmt.Printf("Wrong at worker sheduler update %s at %s\n", worker.Id, time.Now())
+			fmt.Printf("Wrong at worker sheduler update %s at %s\n", id, time.Now())
 		}
-		workerNotify := WorkerNotify{
-			Origin: "WEBHOOK_SHEDULER",
-			Payload: notify_request.NotifyPayload{
-				Type:     custom_types.Sheduler,
-				Status:   feedbackModel.Status,
-				Response: &feedbackModel.Response,
-			},
+		onCompletedEvent := WorkerCompleted{
+			FeedbackModel: feedbackModel,
+			Id:            id,
 		}
-		worker.sendNotify(workerNotify)
+		worker.onComplete(onCompletedEvent)
 	})
 }
-
-func (worker *Worker) sendNotify(workerNotify WorkerNotify) {
+func (worker *Worker) onComplete(workerCompleted WorkerCompleted) {
+	worker.sendWorkerNotify(workerCompleted)
+	fmt.Printf("On complete to work %s", workerCompleted.Id)
+}
+func (worker *Worker) sendWorkerNotify(workerCompleted WorkerCompleted) {
+	origin := fmt.Sprintf("%s_%s", worker.ServiceType.String(), worker.ExecutionType.String())
 	notifyBody := notify_request.NotifyBody{
-		Origin:  workerNotify.Origin,
-		Payload: workerNotify.Payload,
+		Id:     workerCompleted.Id,
+		Origin: strings.ToUpper(origin),
+		Payload: notify_request.NotifyPayload{
+			Id:       workerCompleted.Id,
+			Type:     worker.ExecutionType,
+			Status:   workerCompleted.FeedbackModel.Status,
+			Response: workerCompleted.FeedbackModel.Response,
+		},
 	}
 	worker.Notify.Execute(notifyBody)
-	fmt.Printf("Notify sended to work %s", worker.Id)
+	fmt.Printf("Notify sended to work %s", workerCompleted.Id)
 }

@@ -24,12 +24,13 @@ func (request WebhookRequest) RequestBody() (*bytes.Reader, error) {
 	return bodyReader, nil
 }
 
-func (request WebhookRequest) RequestBodyString() string {
+func (request WebhookRequest) RequestBodyMap() map[string]any {
 	jsonBytes, err := json.Marshal(request.Body)
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())
-		return ""
+		return nil
 	}
-	bodyString := string(jsonBytes)
-	return bodyString
+	var keysPair map[string]any
+	_ = json.Unmarshal(jsonBytes, &keysPair)
+	return keysPair
 }

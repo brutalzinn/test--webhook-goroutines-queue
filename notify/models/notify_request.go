@@ -15,17 +15,19 @@ type NotifyRequest struct {
 }
 
 type NotifyBody struct {
-	Origin  string
-	Payload NotifyPayload
+	Origin  string        `json:"origin"`
+	Id      string        `json:"id"`
+	Payload NotifyPayload `json:"payload"`
 }
 
 type NotifyPayload struct {
-	Status   custom_types.Status
-	Type     custom_types.ExecutionType
-	Response *string
+	Id       string                     `json:"id"`
+	Status   custom_types.Status        `json:"status"`
+	Type     custom_types.ExecutionType `json:"type"`
+	Response map[string]any             `json:"response"`
 }
 
-func (request *NotifyRequest) RequestBody(body NotifyBody) (*bytes.Reader, error) {
+func (request NotifyRequest) RequestBody(body NotifyBody) (*bytes.Reader, error) {
 	jsonStr, err := json.Marshal(body)
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())

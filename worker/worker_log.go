@@ -11,8 +11,8 @@ import (
 
 type WorkerLog struct {
 	Worker          *Worker
-	RequestPayload  string
-	ResponsePayload string
+	RequestPayload  map[string]any
+	ResponsePayload map[string]any
 	Status          custom_types.Status
 }
 
@@ -28,7 +28,7 @@ func connection() (conn *pgx.Conn, err error) {
 func (workerLog *WorkerLog) Insert() (id string, err error) {
 	conn, err := connection()
 	defer conn.Close(context.Background())
-	err = conn.QueryRow(context.Background(), "INSERT INTO queue (name, request_payload, response_payload, service, priority, status) VALUES ($1, $2, $3, $4, $5, $6) returning id", workerLog.Worker.Id, workerLog.RequestPayload, workerLog.ResponsePayload, workerLog.Worker.Service, workerLog.Worker.Options.Priority, workerLog.Status).Scan(&id)
+	err = conn.QueryRow(context.Background(), "INSERT INTO queue (id, request_payload, response_payload, service, priority, status) VALUES ($1, $2, $3, $4, $5, $6) returning id", &workerLog.Worker.Id, &workerLog.RequestPayload, &workerLog.ResponsePayload, &workerLog.Worker.ServiceType, &workerLog.Worker.Options.Priority, &workerLog.Status).Scan(&id)
 	if err != nil {
 		return "", err
 	}
