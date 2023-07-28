@@ -72,6 +72,7 @@ func createObjMap(obj []byte) map[string]any {
 	_ = json.Unmarshal(obj, &keysPair)
 	return keysPair
 }
+
 func (wh *Webhook) createFeedbackModel() worker.WorkerFeedbackModel {
 	execFeedbackModel := worker.WorkerFeedbackModel{
 		ExecuteAt: time.Now(),
